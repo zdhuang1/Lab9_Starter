@@ -7,6 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lab 9</title>
 
+  <!-- TrackJS for error monitoring (step 5) -->
+  <script src="https://cdn.trackjs.com/agent/v3/latest/t.js"></script>
+  <script>
+    window.TrackJS && TrackJS.install({
+      token: "012f8ad6d6a1496daaddc71fab668193"
+    });
+  </script>
+
   <style>
     button {
       margin: 3px;
@@ -88,6 +96,22 @@
   </main>
 
   <script>
+    // custom error classes for the calculator (step 4)
+    class DivisionByZeroError extends Error {
+      constructor(message) {
+        super(message);
+        this.name = 'DivisionByZeroError';
+      }
+    }
+
+    class NaNInputError extends Error {
+      constructor(message) {
+        super(message);
+        this.name = 'NaNInputError';
+      }
+    }
+
+    // calculator form - wrapped in try/catch to handle bad inputs (step 3)
     let form = document.querySelector('form');
     form.addEventListener('submit', e => {
       e.preventDefault();
@@ -95,13 +119,133 @@
       let firstNum = document.querySelector('#first-num').value;
       let secondNum = document.querySelector('#second-num').value;
       let operator = document.querySelector('#operator').value;
-      output.innerHTML = eval(`${firstNum} ${operator} ${secondNum}`);
+
+      try {
+        // throw custom error if inputs aren't numbers
+        if (isNaN(firstNum) || isNaN(secondNum) || firstNum === '' || secondNum === '') {
+          throw new NaNInputError('Inputs must be valid numbers');
+        }
+
+        // can't divide by zero
+        if (operator === '/' && Number(secondNum) === 0) {
+          throw new DivisionByZeroError('Cannot divide by zero');
+        }
+
+        output.innerHTML = eval(`${firstNum} ${operator} ${secondNum}`);
+
+      } catch (e) {
+        if (e instanceof DivisionByZeroError) {
+          console.error(`[${e.name}] ${e.message}`);
+          output.innerHTML = `Error: ${e.message}`;
+        } else if (e instanceof NaNInputError) {
+          console.error(`[${e.name}] ${e.message}`);
+          output.innerHTML = `Error: ${e.message}`;
+        } else {
+          console.error('something broke:', e);
+          output.innerHTML = 'Unknown error';
+        }
+      } finally {
+        // finally always runs regardless of error
+        console.log('calculation attempted');
+      }
+    });
+
+    // global error handler - catches errors outside try/catch (step 5)
+    window.addEventListener('error', (event) => {
+      console.log(`Global error caught! Message: ${event.message} | Line: ${event.lineno}`);
     });
 
     let errorBtns = Array.from(document.querySelectorAll('#error-btns > button'));
 
-    // Start your code here
-    // You may move this JS to another file if you wish
+    // some sample data to use for the demos
+    const users = [
+      { name: 'Alice', age: 20, major: 'CS' },
+      { name: 'Bob', age: 22, major: 'Math' },
+      { name: 'Carol', age: 21, major: 'ECE' },
+    ];
+
+    // console.log - just logs something to the console
+    errorBtns[0].addEventListener('click', () => {
+      console.log('console.log demo:', users);
+    });
+
+    // console.error - shows up red in the console
+    errorBtns[1].addEventListener('click', () => {
+      console.error('console.error demo - something went wrong:', users[0]);
+    });
+
+    // console.count - counts how many times this gets called
+    errorBtns[2].addEventListener('click', () => {
+      console.count('button clicked');
+    });
+
+    // console.warn - yellow warning message
+    errorBtns[3].addEventListener('click', () => {
+      console.warn('console.warn demo - watch out:', users[2]);
+    });
+
+    // console.assert - only logs if the condition is false
+    errorBtns[4].addEventListener('click', () => {
+      console.assert(users[0].age > 30, 'Assert failed: Alice is not over 30', users[0]);
+    });
+
+    // console.clear - clears the console
+    errorBtns[5].addEventListener('click', () => {
+      console.clear();
+    });
+
+    // console.dir - shows all properties of a DOM element
+    errorBtns[6].addEventListener('click', () => {
+      console.dir(document.querySelector('form'));
+    });
+
+    // console.dirxml - shows the DOM tree of an element
+    errorBtns[7].addEventListener('click', () => {
+      console.dirxml(document.querySelector('main'));
+    });
+
+    // console.group - starts a collapsible group in the console
+    errorBtns[8].addEventListener('click', () => {
+      console.group('User Info');
+      console.log('name:', users[0].name);
+      console.log('age:', users[0].age);
+      console.log('major:', users[0].major);
+    });
+
+    // console.groupEnd - closes the group opened above
+    errorBtns[9].addEventListener('click', () => {
+      console.groupEnd();
+    });
+
+    // console.table - renders an array as a table, pretty useful
+    errorBtns[10].addEventListener('click', () => {
+      console.table(users);
+    });
+
+    // console.time - starts a timer
+    errorBtns[11].addEventListener('click', () => {
+      console.time('my-timer');
+      console.log('timer started');
+    });
+
+    // console.timeEnd - stops the timer and prints elapsed time
+    errorBtns[12].addEventListener('click', () => {
+      console.timeEnd('my-timer');
+    });
+
+    // console.trace - prints the call stack
+    errorBtns[13].addEventListener('click', () => {
+      function inner() { console.trace('trace demo:'); }
+      function outer() { inner(); }
+      outer();
+    });
+
+    // triggers a global error on purpose (outside try/catch so window.onerror catches it)
+    errorBtns[14].addEventListener('click', () => {
+      setTimeout(() => {
+        thisFunctionDoesNotExist(); // ReferenceError - will be caught by global handler
+      }, 0);
+    });
   </script>
 </body>
 
